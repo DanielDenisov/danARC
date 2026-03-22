@@ -16,99 +16,50 @@ InfoReturn GameState::GetState() {
     }
 
     // Used on new update
-    // DBG{std::cout << "Uworld: 0x" << std::hex << uworld << std::dec << std::endl;
-    //     scanCamPos(uworld);}
+    DBG {std::cout << "Uworld: 0x" << std::hex << uworld << std::dec << std::endl;}
 
-    Vector3 camPos = getCamPos(uworld);
-    if (camPos.Dist({0, 0, 0}) < 1) {
-        fh.setFirstScan({}); //reset because new map
-        std::cout << "[-] Invalid camPos" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        return{};
-    }
-
-    DBG {camPos.Print();}
-
-    std::vector<RenderEntity> rawEntities = getEntities(uworld);
-    if (!rawEntities.size()) {
+    // std::vector<RenderEntity> rawEntities = getEntities(uworld);
+    std::vector<RenderEntity> rawEntities;
+    FminimalViewInfo viewMatrix;
+    if (!getEntities(uworld, rawEntities, viewMatrix)) {
         fh.setFirstScan({}); //reset because new map
         std::cout << "[-] Invalid rawEntities" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(10));
         return{};
     }
 
-    DBG {std::cout << "Raw Ent Size: " << rawEntities.size() << std::endl;}
-
-    FminimalViewInfo viewMatrix = getLPVM(rawEntities, camPos);
-    DBG {viewMatrix.Print();}
-    // DBG {scanEntityViewInfo(rawEntities, camPos);}
-    if (viewMatrix.FOV < 1) {
-        std::cout << "[-] Invalid ViewMatrix" << std::endl; //Getting this error likely means a bad vtables::PLAYER
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        return{};
-    }
+    DBG {std::cout << "Raw Ent Size: " << rawEntities.size() << std::endl;
+         viewMatrix.Print();}
 
 
-    fh.add(rawEntities);
-    if (fh.getFirstScanSize() == 0) {
-        fh.setFirstScan(rawEntities);
-    }
 
     //filter
-    std::vector<RenderEntity> filteredEntities = filterEntities(rawEntities, camPos);
+    std::vector<RenderEntity> filteredEntities = filterEntities(rawEntities, viewMatrix);
     if (isDebugMode) filteredEntities = rawEntities; //dont filter on debug
 
     DBG {std::cout << "Fil Ent Size: " << filteredEntities.size() << std::endl;}
 
-    //return
     return {viewMatrix, filteredEntities};
 }
 
 /************* Private ************/
 
 ptr GameState::getUworld() {
-    ptr uworldPtrBase = ReadMemory<uintptr_t>(this->BaseAddr + 0xDD29EE8);
+    ptr uworldPtr = ReadMemory<uintptr_t>(this->BaseAddr + 0xDDC4ED8);
 
-    ptr uworldAddr = ReadMemory<uintptr_t>(uworldPtrBase);
+    uworldPtr = ReadMemory<uintptr_t>(uworldPtr);
 
-    return uworldAddr;
+    return uworldPtr;
 }
 
-Vector3 GameState::getCamPos(uintptr_t uworld) {
-    ptr viewInfoPtr = ReadMemory<ptr>(uworld + off::CACHED_VIEW_INFO_PTR);
-    Vector3 camPos = ReadMemory<Vector3>(viewInfoPtr + off::CACHED_POS_PTR);
-    return camPos;
-}
-
-std::vector<RenderEntity> GameState::filterEntities(std::vector<RenderEntity> entities, Vector3 camPos) {
-    std::vector<RenderEntity> filteredEntities; //should not be dupicated or anything
-    for (int i{}; i < entities.size(); i++) {
-        entities[i].dist = entities[i].pos.Dist(camPos);
-        if (entities[i].type == Object::PLAYER || entities[i].type == Object::ARC) {
-            //Not a player, probobly a spawn point
-            // DBG {std::cout << "Dist From First Scan: " << entities[i].pos.Dist(fh.getFirstScanIndexPos(i)) << std::endl;}
-            if (entities[i].pos.Dist(fh.getFirstScanIndexPos(i)) < 50) continue;
-
-            // dead/not moving
-            // DBG {std::cout << "Dist From Old Scan: " << entities[i].pos.Dist(fh.getOldestPosEnt(i)) << std::endl;}
-            if (entities[i].pos.Dist(fh.getOldestPosEnt(i)) < 100) entities[i].isDead = true;
-
-            // DBG {std::cout << "Dist from self: " << entities[i].dist << std::endl;}
-            if (entities[i].dist < 500 && entities[i].type == Object::PLAYER) continue; //LP
-        }
-        if (entities[i].type == Object::PLAYERCAM) continue;
-        filteredEntities.push_back(entities[i]);
-    }
-    return filteredEntities;
-}
-
-std::vector<RenderEntity> GameState::getEntities(uintptr_t uworld) {
+// bool indicates success
+bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEntitiesRaw, FminimalViewInfo &retVM) {
     std::vector<RenderEntity> entities;
     ptr persistentLevel = ReadMemory<ptr>(uworld + off::PERSISTENT_LEVEL);
     DBG{std::cout << "PersistentLvl: 0x" << std::hex <<  persistentLevel << std::dec << std::endl;}
     if (!isValidPtr(persistentLevel)) {
         std::this_thread::sleep_for(std::chrono::seconds(10));
-        return{};
+        return 0;
     }
 
     ptr actors = ReadMemory<ptr>(persistentLevel + off::ACTORS_PTR);
@@ -117,7 +68,7 @@ std::vector<RenderEntity> GameState::getEntities(uintptr_t uworld) {
     DBG{std::cout << "actorsCount: " << actorsCount << std::endl;}
     if (!(isValidPtr(actors) && actorsCount > 0 && actorsCount < 5000)) {
         std::this_thread::sleep_for(std::chrono::seconds(10));
-        return{};
+        return 0;
     }
 
     for (int a = 0; a < actorsCount; a++) {
@@ -130,68 +81,127 @@ std::vector<RenderEntity> GameState::getEntities(uintptr_t uworld) {
         Vector3 pos = ReadMemory<Vector3>(rootComp + off::POS_PTR);
         if (std::abs(pos.x) < 100) continue;
 
-        ptr vt = ReadMemory<ptr>(actor);
-
         FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
+        if (30 < vm.FOV && vm.FOV < 120) {
+            retVM = vm;
+        }
+
+        ptr hc = ReadMemory<ptr>(actor + off::HEALTH_COMPONENT);
+        double health = ReadMemory<double>(hc + off::CACHED_HEALTH);
+
+        ptr vt = ReadMemory<ptr>(actor);
 
         RenderEntity ent;
         ent.actor = actor;
         ent.pos = pos;
+        ent.health = health;
         ent.vt = vt;
-        ent.vm = vm;
+        if (ent.health < 0.01) {ent.isDead = true;} else {ent.isDead = false;}
+
 
         if (!isDebugMode) {
             if (vt == vtabels::PLAYER) ent.type = Object::PLAYER;
             else if (vt == vtabels::ARC) ent.type = Object::ARC;
             else if (vt == vtabels::PICKUP) ent.type = Object::PICKUP;
             else if (vt == vtabels::SEARCH) ent.type = Object::SEARCH;
-            else if (vm.FOV > 30 && vm.FOV < 120) ent.type = Object::PLAYERCAM;
             else continue;
         }
 
         entities.push_back(ent);
     }
-    return entities;
+    retEntitiesRaw = entities;
+    return 1;
 }
 
-FminimalViewInfo GameState::getLPVM(std::vector<RenderEntity> entities, Vector3 camPos) {
-    for (RenderEntity entitie : entities) {
-        if (camPos.Dist(entitie.pos) < 500 && (entitie.vm.FOV < 120 && entitie.vm.FOV > 30)) {
-            if (entitie.type != Object::PLAYERCAM) continue;
-            //std::cout << "VT: 0x" << std::hex << entitie.vt << std::dec << std::endl; //0x14b17e9f0
-            return entitie.vm;
+
+
+std::vector<RenderEntity> GameState::filterEntities(std::vector<RenderEntity> entities, FminimalViewInfo vm) {
+    std::vector<RenderEntity> filteredEntities; //should not be dupicated or anything
+    for (int i{}; i < entities.size(); i++) {
+        entities[i].dist = entities[i].pos.Dist(vm.Location);
+        if (entities[i].type == Object::PLAYER || entities[i].type == Object::ARC) {
+            if (entities[i].dist < 500 && entities[i].type == Object::PLAYER) continue; //LP
         }
+        filteredEntities.push_back(entities[i]);
     }
-    return{};
+    return filteredEntities;
 }
 
-void GameState::scanCamPos(uintptr_t uworld) {
-    // //Find CACHED_VIEW_INFO_PTR + CACHED_POS_PTR offsets (in practice range)
-    std::cout << "Start" << std::endl;
-    for (int i{}; i < 0x5000; i += sizeof(ptr)) {
-        ptr vipCheck = ReadMemory<ptr>(uworld + i);
-        if (!isValidPtr(vipCheck)) continue;
-        for (int j{}; j < 0x5000; j += sizeof(ptr)) {
-            Vector3 posCheck = ReadMemory<Vector3>(vipCheck + j);
-            if ((posCheck.x > 50000 && posCheck.x < 250000) &&
-                (posCheck.y > 50000 && posCheck.y < 250000) &&
-                (posCheck.z > 50000 && posCheck.z < 250000)) {
-                std::cout << "Found Possible Offset: " <<
-                    std::hex << i << " " << j <<  std::dec << std::endl;
-                posCheck.Print();
-            }
-        }
-    }
-}
+// std::vector<RenderEntity> GameState::getEntities(uintptr_t uworld) {
+//     std::vector<RenderEntity> entities;
+//     ptr persistentLevel = ReadMemory<ptr>(uworld + off::PERSISTENT_LEVEL);
+//     DBG{std::cout << "PersistentLvl: 0x" << std::hex <<  persistentLevel << std::dec << std::endl;}
+//     if (!isValidPtr(persistentLevel)) {
+//         std::this_thread::sleep_for(std::chrono::seconds(10));
+//         return{};
+//     }
+//
+//     ptr actors = ReadMemory<ptr>(persistentLevel + off::ACTORS_PTR);
+//     DBG{std::cout << "Actors: 0x" << std::hex << actors << std::dec << std::endl;}
+//     int actorsCount = ReadMemory<int>(persistentLevel + off::ACTORS_PTR + 0x8);
+//     DBG{std::cout << "actorsCount: " << actorsCount << std::endl;}
+//     if (!(isValidPtr(actors) && actorsCount > 0 && actorsCount < 5000)) {
+//         std::this_thread::sleep_for(std::chrono::seconds(10));
+//         return{};
+//     }
+//
+//     for (int a = 0; a < actorsCount; a++) {
+//         ptr actor = ReadMemory<ptr>(actors + (a * 0x8));
+//         if (!isValidPtr(actor)) continue;
+//
+//         ptr rootComp = ReadMemory<ptr>(actor + off::ROOT_COMPONENT_PTR);
+//         if (!isValidPtr(rootComp)) continue;
+//
+//         Vector3 pos = ReadMemory<Vector3>(rootComp + off::POS_PTR);
+//         if (std::abs(pos.x) < 100) continue;
+//
+//         // std::cout << "is LP: " << ReadMemory<bool>(actor + 0xd28) << std::endl;
+//         // if (ReadMemory<bool>(actor + 0xd28) == 1) {
+//         //     pos.Print();
+//         // }
+//
+//         FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + 0xca8);
+//
+//
+//         //found FOV = ce8
+//         //real start = ca8
+//         //diff = 0x40
+//         for (int i = 0; i < 0xFFF; i += sizeof(float)) {
+//             if (std::abs(ReadMemory<float>(actor + i) - 70.0f) < 0.01) {
+//                 std::cout << "FOV Location: " << std::hex << i << std::dec << std::endl;
+//                 std::cout << "Debug: " << ReadMemory<float>(actor + i) << std::endl;
+//                 pos.Print();
+//                 vm.Print();
+//                 for (int j = 0; j < 0x90; j += sizeof(double)) {
+//                     std::cout <<std::hex<<i + j - 0x90<<std::dec<< " | "; ReadMemory<Vector3>(actor + i + j - 0x90).Print();
+//                 }
+//             }
+//         }
+//
+//         ptr vt = ReadMemory<ptr>(actor);
+//         std::cout << "VT: " << std::hex << vt << std::dec << std::endl;
+//
+//
+//
+//
+//
+//         RenderEntity ent;
+//         ent.actor = actor;
+//         ent.pos = pos;
+//         ent.vt = vt;
+//         ent.vm = vm;
+//
+//         if (!isDebugMode) {
+//             if (vt == vtabels::PLAYER) ent.type = Object::PLAYER;
+//             else if (vt == vtabels::ARC) ent.type = Object::ARC;
+//             else if (vt == vtabels::PICKUP) ent.type = Object::PICKUP;
+//             else if (vt == vtabels::SEARCH) ent.type = Object::SEARCH;
+//             else if (vm.FOV > 30 && vm.FOV < 120) ent.type = Object::PLAYERCAM;
+//             else continue;
+//         }
+//
+//         entities.push_back(ent);
+//     }
+//     return entities;
+// }
 
-void GameState::scanEntityViewInfo(std::vector<RenderEntity> entities, Vector3 camPos) {
-    for (RenderEntity entity : entities) {
-        for (int i{}; i < 0xFFF; i += sizeof(ptr)) {
-            FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(entity.actor + i);
-            if (vm.Location.Dist(camPos) < 50) {
-                std::cout << "ViewMatrix Offset: 0x" << std::hex << i << std::dec << std::endl;
-                std::cout << "VT of entity: 0x" << std::hex << entity.vt << std::dec << std::endl;
-            }
-        }
-    }
-}

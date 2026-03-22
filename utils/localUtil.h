@@ -20,7 +20,6 @@ enum Object {
     SEARCH,
     PICKUP,
     PLAYER,
-    PLAYERCAM,
     NONE
 };
 
@@ -28,14 +27,13 @@ struct RenderEntity {
     ptr actor;
     Vector3 pos;         //Position
     double dist{};       //Dist, may not be accurate until "filterEntities(...)"
-    FminimalViewInfo vm; //View Matrix
-    ptr vt{};            //Virtual Table
+    double health = 100;
+    ptr vt;
     enum Object type = Object::NONE; //vt enum
     bool isDead = false; //Is dead, may not be accurate until "filterEntities(...)"
 
     void Print() {
         pos.Print();
-        std::cout << "VT: " << vt << std::endl;
         std::cout << "Type: " << type << std::endl;
     }
 };

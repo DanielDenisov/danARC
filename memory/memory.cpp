@@ -160,6 +160,7 @@ template uintptr_t ReadMemory<uintptr_t>(uintptr_t address);
 template Vector3 ReadMemory<Vector3>(uintptr_t address);
 template Matrix4x4 ReadMemory<Matrix4x4>(uintptr_t address);
 template FminimalViewInfo ReadMemory<FminimalViewInfo>(uintptr_t address);
+template uint8_t ReadMemory<uint8_t>(uintptr_t address);
 
 //For reading player list or bone list and stuff
 // template TArray<uintptr_t> ReadMemory<TArray<uintptr_t>>(uintptr_t address);

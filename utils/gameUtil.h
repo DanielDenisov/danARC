@@ -42,9 +42,11 @@ struct Vector3 {
 };
 
 struct FminimalViewInfo {
-    Vector3 Location{};   // +0x00 (24 bytes)
-    Vector3 Rotation{};   // +0x18 (24 bytes) - pitch, yaw, roll in DEGREES
-    float FOV;            // +0x30
+    Vector3 Location{};
+    double pad1 = 0;
+    Vector3 Rotation{};   // pitch, yaw, roll in DEGREES
+    double pad2 = 0;
+    float FOV;
 
     void Print() const {
         std::cout << "FminimalViewInfo:" << std::endl;

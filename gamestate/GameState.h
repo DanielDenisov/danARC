@@ -75,21 +75,13 @@ private:
     //needs updating every game update
     ptr getUworld();
 
-    Vector3 getCamPos(ptr uworld);
-
-    std::vector<RenderEntity> getEntities(ptr uworld);
-
-    FminimalViewInfo getLPVM(std::vector<RenderEntity> entities, Vector3 camPos);
+    bool getEntities(ptr uworld, std::vector<RenderEntity> &retEntitiesRaw, FminimalViewInfo &retVM);
 
     //Math for stand still, dead, and LP
-    std::vector<RenderEntity> filterEntities(std::vector<RenderEntity> entities, Vector3 camPos);
+    std::vector<RenderEntity> filterEntities(std::vector<RenderEntity> entities, FminimalViewInfo camPos);
 
 private:
-    //If you load into practice range, be on 70FOV,
-    //and dont move cam at ALL, position is: 195541 102479 150591
-    void scanCamPos(ptr uworld);
 
-    void scanEntityViewInfo(std::vector<RenderEntity> entities, Vector3 camPos);
 };
 
 
