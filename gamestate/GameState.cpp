@@ -1,5 +1,6 @@
 #include "GameState.h"
 
+#include <ranges>
 #include <thread>
 #include "../memory/memory.h"
 
@@ -20,7 +21,7 @@ InfoReturn GameState::GetState() {
 
     // std::vector<RenderEntity> rawEntities = getEntities(uworld);
     std::vector<RenderEntity> rawEntities;
-    FminimalViewInfo viewMatrix;
+    FminimalViewInfo viewMatrix{};
     if (!getEntities(uworld, rawEntities, viewMatrix)) {
         fh.setFirstScan({}); //reset because new map
         std::cout << "[-] Invalid rawEntities" << std::endl;
@@ -45,12 +46,15 @@ InfoReturn GameState::GetState() {
 /************* Private ************/
 
 ptr GameState::getUworld() {
-    ptr uworldPtr = ReadMemory<uintptr_t>(this->BaseAddr + 0xDDC4ED8);
+    ptr uworldPtr = ReadMemory<uintptr_t>(this->BaseAddr + 0xDCB9AB8);
 
     uworldPtr = ReadMemory<uintptr_t>(uworldPtr);
 
     return uworldPtr;
 }
+
+void getViewMatrix(ptr actor);
+void getPosPtr(ptr componentPtr);
 
 // bool indicates success
 bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEntitiesRaw, FminimalViewInfo &retVM) {
@@ -75,28 +79,38 @@ bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEnti
         ptr actor = ReadMemory<ptr>(actors + (a * 0x8));
         if (!isValidPtr(actor)) continue;
 
+        if (retVM.FOV == 0) { //Does not check twice in same loop
+            FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
+            if (30 < vm.FOV && vm.FOV < 120 && vm.Location.Dist({0,0,0}) < 2e6 && vm.Rotation.Dist({0,0,0}) < 1e3) {
+                retVM = vm;
+            }
+        }
+
+        // getViewMatrix(actor);
+        // getPosPtr(actor);
+
         ptr rootComp = ReadMemory<ptr>(actor + off::ROOT_COMPONENT_PTR);
         if (!isValidPtr(rootComp)) continue;
 
         Vector3 pos = ReadMemory<Vector3>(rootComp + off::POS_PTR);
         if (std::abs(pos.x) < 100) continue;
 
-        FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
-        if (30 < vm.FOV && vm.FOV < 120) {
-            retVM = vm;
-        }
 
-        ptr hc = ReadMemory<ptr>(actor + off::HEALTH_COMPONENT);
-        double health = ReadMemory<double>(hc + off::CACHED_HEALTH);
+        //Player Health
+        ptr playerhc = ReadMemory<ptr>(actor + off::HEALTH_COMPONENT);
+        double health = ReadMemory<double>(playerhc + off::CACHED_HEALTH);
+
+        // //AI Health
+        // ptr AIhc = ReadMemory<ptr>(actor + 0x1288);
+        // ptr AIHArr = ReadMemory<ptr>(AIhc + )
 
         ptr vt = ReadMemory<ptr>(actor);
 
         RenderEntity ent;
         ent.actor = actor;
         ent.pos = pos;
-        ent.health = health;
+        ent.playerHealth = health;
         ent.vt = vt;
-        if (ent.health < 0.01) {ent.isDead = true;} else {ent.isDead = false;}
 
 
         if (!isDebugMode) {
@@ -120,11 +134,43 @@ std::vector<RenderEntity> GameState::filterEntities(std::vector<RenderEntity> en
     for (int i{}; i < entities.size(); i++) {
         entities[i].dist = entities[i].pos.Dist(vm.Location);
         if (entities[i].type == Object::PLAYER || entities[i].type == Object::ARC) {
-            if (entities[i].dist < 500 && entities[i].type == Object::PLAYER) continue; //LP
+            if (entities[i].type == Object::PLAYER && entities[i].dist < 500) continue; //LP
+            if (entities[i].type == Object::PLAYER && entities[i].playerHealth < 0.01) entities[i].isDead = true; //Dead
         }
         filteredEntities.push_back(entities[i]);
     }
     return filteredEntities;
+}
+
+void getViewMatrix(ptr actor) {
+    // Uncomment to find offset of ViewMatrix
+    // Currently take this output and do -0x40
+    for (int j = 0x000; j < 0xFFFF; j += 1) {
+        if (std::abs(ReadMemory<float>(actor + j)-70.0f/*Your FOV*/) < 0.01) {
+            std::cout << "FOV at offset: " << ReadMemory<float>(actor + j) << ' ' << std::hex << j << std::endl;
+            for (int k = -0x100; k < 0x0; k += sizeof(double)) {
+                std::cout << std::hex << j+k << std::dec << " " << ReadMemory<double>(actor+j+k) << std::endl;
+            }
+            std::cout << std::hex << j << std::dec << " FOV here" << std::endl;
+            auto vmTemp = ReadMemory<FminimalViewInfo>(actor + 0xcc8);
+            std::cout << "VM Temp:" << std::endl;
+            vmTemp.Print();
+        }
+    }
+}
+
+void getPosPtr(ptr actor) {
+    //Only works when you close
+    for (int i = 0; i < 0x400; i++) {
+        auto rootComp = ReadMemory<ptr>(actor + i);
+        for (int j = 0; j < 0x400; j++) {
+            auto pos = ReadMemory<Vector3>(rootComp + j);
+            if (pos.Dist({198076.59, -199831.00, 150590.18}) < 10000) {
+                std::cout << "Off: " << std::hex << i << " " << j << std::dec << std::endl;
+                pos.Print();
+            }
+        }
+    }
 }
 
 // std::vector<RenderEntity> GameState::getEntities(uintptr_t uworld) {

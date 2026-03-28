@@ -83,7 +83,8 @@ void DrawESP(const std::vector<RenderEntity>& entities, FminimalViewInfo cameraI
             //if (distM < 1.0f) distM = 1.0f;
 
             if (isDebugMode) {
-                if (distM < 50) {
+                distM = ent.pos.Dist(cameraInfo.Location)/100.f; //because skips filtering. so do here
+                if (distM < 150) {
                     char vtBuf[64];
                     sprintf(vtBuf, "0x%lx [%.0fm]", ent.vt, distM);
                     DrawTextImGui(s.x, s.y, IM_COL32(255, 255, 255, 255), vtBuf);
@@ -115,6 +116,10 @@ void DrawESP(const std::vector<RenderEntity>& entities, FminimalViewInfo cameraI
                     float w = h / 2.0f;
 
                     DrawBox(sHead.x - w/2, sHead.y, w, h, color);
+                    int lineX = sHead.x + w/2 + 1 + int((1/(-maxPlayerDist/400*100))*ent.dist + maxPlayerDist/(100*100)); //Scale the x-gap with distance
+                    int lineYHeight = (sFeet.y - sHead.y)*(ent.playerHealth/100); //calc based on health
+
+                    DrawLine(lineX, sFeet.y, lineX, sFeet.y-lineYHeight, IM_COL32(100, 255, 100, 255));
 
                     char dBuf[32];
                     sprintf(dBuf, "%.0fm", distM);
