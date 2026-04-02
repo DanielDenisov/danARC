@@ -49,7 +49,7 @@ InfoReturn GameState::GetState() {
 /************* Private ************/
 
 ptr GameState::getUworld() {
-    ptr uworldPtr = ReadMemory<uintptr_t>(this->BaseAddr + 0xDCB9AB8);
+    ptr uworldPtr = ReadMemory<uintptr_t>(this->BaseAddr + 0xDEEF8D8);
 
     uworldPtr = ReadMemory<uintptr_t>(uworldPtr);
 
@@ -82,15 +82,24 @@ bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEnti
         ptr actor = ReadMemory<ptr>(actors + (a * 0x8));
         if (!isValidPtr(actor)) continue;
 
-        FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
-        if (retVM.FOV == 0 || vm.Location.Dist(lastCamPos) < 5*100) { //Does not check twice in same loop
-            if (30 < vm.FOV && vm.FOV < 120 &&
-                vm.Location.Dist({}) < 2e6 && vm.Rotation.Dist({}) < 1e3 &&
-                vm.Location.Dist({}) > 1000
-                ) {
-                retVM = vm;
-            }
+        //Establish entity for loop
+        RenderEntity ent;
+
+        //Easy filter to mimimze reads
+        ptr vt = ReadMemory<ptr>(actor);
+        if (!isDebugMode) {
+            if (vt == vtabels::PLAYER) ent.type = Object::PLAYER;
+            else if (vt == vtabels::ARC) ent.type = Object::ARC;
+            else if (vt == vtabels::PICKUP) ent.type = Object::PICKUP;
+            else if (vt == vtabels::SEARCH) ent.type = Object::SEARCH;
+            else if (vt == vtabels::CAMMANAGER) ent.type = Object::NONE;
+            else continue;
         }
+        ent.actor = actor;
+        ent.vt = vt;
+
+        //Get Camera
+        if (vt == vtabels::CAMMANAGER) retVM = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
 
         // getViewMatrix(actor);
         // getPosPtr(actor);
@@ -100,32 +109,17 @@ bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEnti
 
         Vector3 pos = ReadMemory<Vector3>(rootComp + off::POS_PTR);
         if (std::abs(pos.x) < 100) continue;
+        ent.pos = pos;
 
 
         //Player Health
         ptr playerhc = ReadMemory<ptr>(actor + off::HEALTH_COMPONENT);
         double health = ReadMemory<double>(playerhc + off::CACHED_HEALTH);
+        ent.playerHealth = health;
 
         // //AI Health
         // ptr AIhc = ReadMemory<ptr>(actor + 0x1288);
         // ptr AIHArr = ReadMemory<ptr>(AIhc + )
-
-        ptr vt = ReadMemory<ptr>(actor);
-
-        RenderEntity ent;
-        ent.actor = actor;
-        ent.pos = pos;
-        ent.playerHealth = health;
-        ent.vt = vt;
-
-
-        if (!isDebugMode) {
-            if (vt == vtabels::PLAYER) ent.type = Object::PLAYER;
-            else if (vt == vtabels::ARC) ent.type = Object::ARC;
-            else if (vt == vtabels::PICKUP) ent.type = Object::PICKUP;
-            else if (vt == vtabels::SEARCH) ent.type = Object::SEARCH;
-            else continue;
-        }
 
         entities.push_back(ent);
     }
@@ -158,9 +152,8 @@ void getViewMatrix(ptr actor) {
                 std::cout << std::hex << j+k << std::dec << " " << ReadMemory<double>(actor+j+k) << std::endl;
             }
             std::cout << std::hex << j << std::dec << " FOV here" << std::endl;
-            auto vmTemp = ReadMemory<FminimalViewInfo>(actor + 0xcc8);
-            std::cout << "VM Temp:" << std::endl;
-            vmTemp.Print();
+            ptr vt = ReadMemory<ptr>(actor);
+            std::cout << "VT Entry: 0x" << std::hex << vt << std::endl;
         }
     }
 }

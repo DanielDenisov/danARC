@@ -45,7 +45,7 @@ struct FminimalViewInfo {
     Vector3 Location{};
     double pad1, pad2 = 0;
     Vector3 Rotation{};   // pitch, yaw, roll in DEGREES
-    double pad3 = 0;
+    double pad3, pad4 = 0;
     float FOV;
 
     void Print() const {
