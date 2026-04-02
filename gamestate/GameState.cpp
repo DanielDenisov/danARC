@@ -32,6 +32,9 @@ InfoReturn GameState::GetState() {
     DBG {std::cout << "Raw Ent Size: " << rawEntities.size() << std::endl;
          viewMatrix.Print();}
 
+    // viewMatrix.Print();
+    // lastCamPos.Print();
+    lastCamPos = viewMatrix.Location;
 
 
     //filter
@@ -79,9 +82,12 @@ bool GameState::getEntities(uintptr_t uworld, std::vector<RenderEntity> &retEnti
         ptr actor = ReadMemory<ptr>(actors + (a * 0x8));
         if (!isValidPtr(actor)) continue;
 
-        if (retVM.FOV == 0) { //Does not check twice in same loop
-            FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
-            if (30 < vm.FOV && vm.FOV < 120 && vm.Location.Dist({0,0,0}) < 2e6 && vm.Rotation.Dist({0,0,0}) < 1e3) {
+        FminimalViewInfo vm = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
+        if (retVM.FOV == 0 || vm.Location.Dist(lastCamPos) < 5*100) { //Does not check twice in same loop
+            if (30 < vm.FOV && vm.FOV < 120 &&
+                vm.Location.Dist({}) < 2e6 && vm.Rotation.Dist({}) < 1e3 &&
+                vm.Location.Dist({}) > 1000
+                ) {
                 retVM = vm;
             }
         }

@@ -65,6 +65,7 @@ private:
     ptr BaseAddr = 0x140000000;
     friend class FrameHistory;
     FrameHistory fh = FrameHistory(1000);
+    Vector3 lastCamPos{};
 
 public:
     GameState(ptr baseAddr);

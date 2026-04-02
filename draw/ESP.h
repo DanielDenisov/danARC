@@ -35,6 +35,7 @@ void DrawRadar(const std::vector<RenderEntity>& entities, FminimalViewInfo camer
     for (const auto& ent : entities) {
         if (ent.type == Object::PICKUP || ent.type == Object::SEARCH) continue;
         if (ent.dist > radarRadius * scale) continue;
+        if (ent.isDead) continue;
 
         float deltaX = ent.pos.x - cameraInfo.Location.x;
         float deltaY = ent.pos.y - cameraInfo.Location.y;

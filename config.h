@@ -4,8 +4,8 @@
 
 //-------------------Config-------------------// btw m stands of meters
 inline double maxPlayerDist = 400/*<-Dist in m*/ * 100;
-inline double maxArcDist = 200  /*<-Dist in m*/  * 100;
-inline double maxLootDist = 70 /*<-Dist in m*/   * 100;
+inline double maxArcDist = 150  /*<-Dist in m*/  * 100;
+inline double maxLootDist = 40 /*<-Dist in m*/   * 100;
 inline bool enableRadar = true;
 
 inline int SCREEN_H = 1440;
