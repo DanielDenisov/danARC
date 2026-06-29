@@ -7,6 +7,7 @@
 #include <deque>
 #include <fstream>
 
+#include "config.h"
 #include "../memory/memory.h"
 #include "gameUtil.h"
 
