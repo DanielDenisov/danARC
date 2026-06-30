@@ -44,7 +44,6 @@ gsRet GameState::tick() {
         DBG {std::cout << "Filt Ent Size: " << filt.filtEnt.size() << std::endl;}
     }
 
-    std::cout << "lastTeamID: " << this->lastTeamID << std::endl;
     return {filt.filtEnt, raw.VM, this->lastTeamID};
 }
 
@@ -74,7 +73,6 @@ GameState::FilterRet GameState::filterEnt(std::vector<RenderEntity> rawEnt, Fmin
 
         fr.filtEnt.push_back(ent);
     }
-    std::cout << "Raw team: " << fr.localPlayerTeam << std::endl;
     return fr;
 }
 
