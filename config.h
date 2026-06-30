@@ -46,6 +46,8 @@ namespace off {
     // find under "namespace EmbarkCharacterMovementComponentBase" OR "namespace CharacterMovementComponent"
     pr LAST_SUBMIT_TIME = 0x4CC; //NetworkMinTimeBetweenClientAckGoodMoves
 
+    pr IS_DESTROYED = 0x1210; //bIsDestroyed
+
     //bIsDestroyed
     //
 

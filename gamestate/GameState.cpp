@@ -149,7 +149,7 @@ GameState::RawInfo GameState::getRawEnt(ptr uworld) {
 
             ent.teamID = ReadMemory<char>(actor + off::TEAM_ID);
         } else if (ent.type == Object::ARC) {
-            ent.isDead = ReadMemory<bool>(actor + 0x1210);
+            ent.isDead = ReadMemory<bool>(actor + off::IS_DESTROYED);
         }
 
 
