@@ -23,7 +23,20 @@ int main() {
 
     ProcessId = FindGamePID();
     // GameState gs = GameState(0x140000000);
+    GameState gs = GameState();
     while (g_Running && !glfwWindowShouldClose(window)) {
+        gsRet gsr = gs.tick();
+
+        RenderBegin();
+
+        char buf[64];
+        sprintf(buf, "Entities: %lu", gsr.entities.size());
+        DrawTextImGui(10, 10, IM_COL32(255, 0, 0, 255), buf);
+
+        DrawESP(gsr.entities, gsr.vm, gsr.localPlayerTeam);
+
+        RenderEnd();
+
         // InfoReturn gsInfo = gs.GetState();
         //
         // RenderBegin();

@@ -1,3 +1,13 @@
+# danARC
+
+## How to update
+if you have no programming experience, ask AI and point it to this document
+1) all offsets (located in config.h) need to be updated
+2) if you cannot find viewmatrix ptr and/or position, use the functions in GameState.cpp
+3) enable debug mode (also in config.h) 
+4) go into a real match, look at players, other ARC, loot checks and loot that you can pick up and write down the number (0x...) and put fill in the corresponding entity under vtabels in config.h
+
+
 Things to consider:
 
 If you want to see more that just players and some bots, go beyond the presistet level, ints all of the levels, bots sit at different levels than people

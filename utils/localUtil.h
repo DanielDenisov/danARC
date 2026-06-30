@@ -28,10 +28,12 @@ struct RenderEntity {
     ptr actor;
     Vector3 pos;         //Position
     double dist{};       //Dist, may not be accurate until "filterEntities(...)"
-    double playerHealth = 100;
+    double playerHealth = 100; //Only for players
     ptr vt;
     enum Object type = Object::NONE; //vt enum
     bool isDead = false; //Is dead, may not be accurate until "filterEntities(...)"
+    bool isVisible = true; //Only for players
+    char teamID = 'l'; //some random value
 
     void Print() {
         pos.Print();
