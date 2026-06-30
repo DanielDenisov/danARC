@@ -48,7 +48,9 @@ inline void DrawESP(const std::vector<RenderEntity>& entities, FminimalViewInfo 
             if (ent.teamID == localPlayerTeam) continue; //on our team
             if (ent.isDead) {
                 double rad = getProportionalRadius(ent.dist, maxPlayerDist);
-                drawDistanceText(ent.dist, {screenPos.x, screenPos.y+rad+1});
+                DrawCircleFilled(screenPos.x, screenPos.y, rad, COLOR::red);
+                drawDistanceText(ent.dist, {screenPos.x, screenPos.y+rad+6});
+                continue;
             }
 
             //should be rednered from this point on
@@ -77,7 +79,7 @@ inline void DrawESP(const std::vector<RenderEntity>& entities, FminimalViewInfo 
             }
 
 
-            drawDistanceText(ent.dist, {sHead.x - w/2, sHead.y - 15});
+            drawDistanceText(ent.dist, {sHead.x - w/2, sHead.y - 8});
         } else {
             int radius = 5;
             if (ent.type == Object::ARC) {
@@ -96,7 +98,7 @@ inline void DrawESP(const std::vector<RenderEntity>& entities, FminimalViewInfo 
             }
 
             DrawCircleFilled(screenPos.x, screenPos.y, radius, color);
-            drawDistanceText(ent.dist, {screenPos.x, screenPos.y+radius+1});
+            drawDistanceText(ent.dist, {screenPos.x, screenPos.y+radius+6});
         }
     }
 }

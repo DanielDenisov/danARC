@@ -24,6 +24,7 @@ gsRet GameState::tick() {
 
     RawInfo raw = getRawEnt(uworld);
     if (raw.rawEnt.empty() || std::abs(raw.VM.FOV - 70.0) > 60.0) {
+        this->lastTeamID = -1;
         std::cout << "[-] Invalid rawEntities or no viewMatrix" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(10));
         return{};
@@ -32,18 +33,19 @@ gsRet GameState::tick() {
     DBG {std::cout << "Raw Ent Size: " << raw.rawEnt.size() << std::endl;
         raw.VM.Print();}
 
-    FilterRet filt{raw.rawEnt, 'l'};
+    FilterRet filt{raw.rawEnt, this->lastTeamID};
     if (!isDebugMode) { //skip on debug
         filt = filterEnt(raw.rawEnt, raw.VM);
         if (filt.filtEnt.empty()) {
             std::cout << "[-] No ent found, may be in practice range or its just not working" << std::endl;
         }
+        if (filt.localPlayerTeam != -1) this->lastTeamID = filt.localPlayerTeam;
 
         DBG {std::cout << "Filt Ent Size: " << filt.filtEnt.size() << std::endl;}
     }
 
-
-    return {filt.filtEnt, raw.VM, filt.localPlayerTeam};
+    std::cout << "lastTeamID: " << this->lastTeamID << std::endl;
+    return {filt.filtEnt, raw.VM, this->lastTeamID};
 }
 
 uintptr_t GameState::getUworld() {
@@ -60,17 +62,19 @@ GameState::FilterRet GameState::filterEnt(std::vector<RenderEntity> rawEnt, Fmin
 
     for (RenderEntity ent : rawEnt) {
         double dist = ent.pos.Dist(vm.Location);
-        // if (dist < 5 * 100) { //very close to self
-        //     if (ent.type == Object::PLAYER) {
-        //         fr.localPlayerTeam = ent.teamID;
-        //     }
-        //     continue;
-        // }
+        if (dist < 2 * 100) { //very close to self
+            if (ent.type == Object::PLAYER) {
+                fr.localPlayerTeam = ent.teamID;
+
+                continue;
+            }
+        }
 
         ent.dist = dist/100;
 
         fr.filtEnt.push_back(ent);
     }
+    std::cout << "Raw team: " << fr.localPlayerTeam << std::endl;
     return fr;
 }
 
@@ -137,17 +141,18 @@ GameState::RawInfo GameState::getRawEnt(ptr uworld) {
             // float health = ReadMemory<float>(dep2 + 0xb8);
             if (ent.playerHealth < 1) ent.isDead = true;
 
-            ptr mesh = ReadMemory<ptr>(actor + off::MESH);
-            if (isValidPtr(mesh)) {
-                float lastSubmitTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME);
-                float lastRenderTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float));
-                float lastRenderTimeOnScreen = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float)*2);
-                bool isOnScreen = (lastRenderTime == lastRenderTimeOnScreen);
-                bool isRecent = (lastSubmitTime - lastRenderTime) <= 0.06f;
-                ent.isVisible = isOnScreen && isRecent;
-            }
+            //Does not work
+            // ptr mesh = ReadMemory<ptr>(actor + off::MESH);
+            // if (isValidPtr(mesh)) {
+            //     float lastSubmitTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME);
+            //     float lastRenderTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float));
+            //     float lastRenderTimeOnScreen = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float)*2);
+            //     bool isOnScreen = (lastRenderTime == lastRenderTimeOnScreen);
+            //     bool isRecent = (lastSubmitTime - lastRenderTime) <= 0.06f;
+            //     ent.isVisible = isOnScreen && isRecent;
+            // }
 
-            ent.teamID = ReadMemory<char>(actor + off::TEAM_ID);
+            ent.teamID = ReadMemory<int>(actor + off::TEAM_ID);
         } else if (ent.type == Object::ARC) {
             ent.isDead = ReadMemory<bool>(actor + off::IS_DESTROYED);
         }

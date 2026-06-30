@@ -33,7 +33,7 @@ struct RenderEntity {
     enum Object type = Object::NONE; //vt enum
     bool isDead = false; //Is dead, may not be accurate until "filterEntities(...)"
     bool isVisible = true; //Only for players
-    char teamID = 'l'; //some random value
+    int teamID = -1; //some random value
 
     void Print() {
         pos.Print();

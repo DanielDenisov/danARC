@@ -12,12 +12,14 @@
 struct gsRet {
     std::vector<RenderEntity> entities{};
     FminimalViewInfo vm{};
-    char localPlayerTeam{};
+    int localPlayerTeam{};
 };
 
 class GameState {
 private:
     ptr baseAddr{};
+    int lastTeamID = -1; //needed because local player is based off dist from camera,
+    //if you roll, you go father, outside reasonable range, so need to save to memory
 
 public:
     GameState(ptr baseAddr = 0x140000000);
@@ -35,7 +37,7 @@ private:
 
     struct FilterRet {
         std::vector<RenderEntity> filtEnt{};
-        char localPlayerTeam = 'l';
+        int localPlayerTeam = -1;
     };
     FilterRet filterEnt(std::vector<RenderEntity> rawEnt, FminimalViewInfo vm);
 
