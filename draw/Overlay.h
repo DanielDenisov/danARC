@@ -56,11 +56,11 @@ bool InitOverlay() {
         return false;
     }
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    SCREEN_W = mode->width;
-    SCREEN_H = mode->height;
+    config::SCREEN_W = mode->width;
+    config::SCREEN_H = mode->height;
 
     // Create Window
-    window = glfwCreateWindow(SCREEN_W, SCREEN_H, "Better Discord Overlay", nullptr, nullptr);
+    window = glfwCreateWindow(config::SCREEN_W, config::SCREEN_H, "Better Discord Overlay", nullptr, nullptr);
     if (!window) return false;
 
     glfwSetWindowPos(window, 0, 0);
@@ -94,7 +94,7 @@ void RenderBegin() {
     ImGui::NewFrame();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(SCREEN_W, SCREEN_H));
+    ImGui::SetNextWindowSize(ImVec2(config::SCREEN_W, config::SCREEN_H));
     ImGui::Begin("##Overlay", nullptr,
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
         ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings |

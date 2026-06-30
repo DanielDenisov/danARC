@@ -22,8 +22,8 @@ int main() {
     }
 
     ProcessId = FindGamePID();
-    // GameState gs = GameState(0x140000000);
     GameState gs = GameState();
+    ESPInit();
     while (g_Running && !glfwWindowShouldClose(window)) {
         gsRet gsr = gs.tick();
 
@@ -33,22 +33,13 @@ int main() {
         sprintf(buf, "Entities: %lu", gsr.entities.size());
         DrawTextImGui(10, 10, IM_COL32(255, 0, 0, 255), buf);
 
+
         DrawESP(gsr.entities, gsr.vm, gsr.localPlayerTeam);
+        if (config::enableRadar) DrawRadar(gsr.entities, gsr.vm, gsr.localPlayerTeam);
 
         RenderEnd();
 
-        // InfoReturn gsInfo = gs.GetState();
-        //
-        // RenderBegin();
-        //
-        // char buf[64];
-        // sprintf(buf, "Entities: %lu", gsInfo.entities.size());
-        // DrawTextImGui(10, 10, IM_COL32(255, 0, 0, 255), buf);
-        //
-        // if (enableRadar) DrawRadar(gsInfo.entities, gsInfo.vm);
-        // DrawESP(gsInfo.entities, gsInfo.vm, maxArcDist, maxLootDist, SCREEN_W, SCREEN_H);
-        //
-        // RenderEnd();
+
     }
 
     std::cout << "[+] Destructing Window" << std::endl;

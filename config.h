@@ -3,23 +3,29 @@
 #include <cstdint>
 
 //-------------------Config-------------------// btw m stands of meters
+namespace config {
+    //ESP Preferences
+    inline bool makeLootESPTranslucent = true;
+    inline bool makeDeadBotESPTranslucent = true;
+    inline bool makeDeadPlayerESPTranslucent = true;
 
-//ESP Preferences
-inline bool makeLootESPTranslucent = true;
-inline bool makeDeadBotESPTranslucent = true;
-inline bool makeDeadPlayerESPTranslucent = true;
+    //ESP Distance Config
+    inline double maxPlayerDist = 400/*<-Dist in m*/;
+    inline double maxArcDist = 150  /*<-Dist in m*/ ;
+    inline double maxLootDist = 40 /*<-Dist in m*/  ;
 
-//ESP Distance Config
-inline double maxPlayerDist = 400/*<-Dist in m*/;
-inline double maxArcDist = 150  /*<-Dist in m*/ ;
-inline double maxLootDist = 40 /*<-Dist in m*/  ;
+    //If You want Radar
+    inline bool enableRadar = true;
+    inline float radarCenterX = 150; //coords px
+    inline float radarCenterY = 150; //coords px
+    inline float radarRadius = 100;  //size px
+    inline float scale = 200.0f; //meters
+    inline float selfDot = false;
 
-//If You want Radar
-inline bool enableRadar = true;
-
-//Set this to your monitor resolution
-inline int SCREEN_H = 1440 /*<-Make you monitor height*/ * 0.94/*just trust me, this helps with distortion around screen edge*/;
-inline int SCREEN_W = 2560 /*<-Make you monitor width*/;
+    //Set this to your monitor resolution
+    inline int SCREEN_H = 1440 /*<-Make you monitor height*/ * 0.94/*just trust me, this helps with distortion around screen edge*/;
+    inline int SCREEN_W = 2560 /*<-Make you monitor width*/;
+}
 
 //For updating the program
 inline constexpr bool isDebugMode = false;
