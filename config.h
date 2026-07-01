@@ -25,6 +25,8 @@ namespace config {
     //Set this to your monitor resolution
     inline int SCREEN_H = 1440 /*<-Make you monitor height*/ * 0.94/*just trust me, this helps with distortion around screen edge*/;
     inline int SCREEN_W = 2560 /*<-Make you monitor width*/;
+
+    inline const auto OVERLAY_NAME = "Discover Overlay"; //Name of the overlay
 }
 
 //For updating the program

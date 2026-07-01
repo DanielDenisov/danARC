@@ -156,12 +156,6 @@ GameState::RawInfo GameState::getRawEnt(ptr uworld) {
         }
 
 
-        //TODO: only hav eit check for destroyed if is bot
-        //TODO: Implement viz check
-        //TODO: Implement team check
-
-
-
         // getViewMatrix(actor); //uncomment to dump memort and find
         // getPosPtr(actor); //can find both Root Component AND position, print out is Off: rootComp posPtr
 
