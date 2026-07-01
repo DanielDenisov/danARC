@@ -44,6 +44,10 @@ google/ask AI how to setup the build utility inside of clion (Release build)
 "./cmake-build-release/danARC", find were your program build to in the last step and change the code in start.sh to match that path
 10) Make sure the game is Load into a game is in windowed mode
 
+## Known Issues
+1) ESP gets distorted at the edges
+2) Sometimes it freezes (you can solve this yourself by adding some debugging and then doing some multithreading)
+
 ## How to configure
 All configuration options are located in the file config.h
 It is expected that you have a system that has the environment set up to properly build this project
