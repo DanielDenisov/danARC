@@ -24,9 +24,8 @@ gsRet GameState::tick() {
 
     RawInfo raw = getRawEnt(uworld);
     if (raw.rawEnt.empty() || std::abs(raw.VM.FOV - 70.0) > 60.0) {
-        this->lastTeamID = -1;
         std::cout << "[-] Invalid rawEntities or no viewMatrix" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        // std::this_thread::sleep_for(std::chrono::seconds(10));
         return{};
     }
 

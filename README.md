@@ -43,7 +43,7 @@ google/ask AI how to setup the build utility inside of clion (Release build)
 9) Run with: ```bash start.sh``` chance this does not work its probably because your output of danARC is not in the relative path 
 "./cmake-build-release/danARC", find were your program build to in the last step and change the code in start.sh to match that path
 10) Make sure the game is Load into a game is in windowed mode
-
+11) When you start the process, right-click the overlay -> More Actions -> Keep Above Others  
 ## Known Issues
 1) ESP gets distorted at the edges
 2) Sometimes it freezes (you can solve this yourself by adding some debugging and then doing some multithreading)
